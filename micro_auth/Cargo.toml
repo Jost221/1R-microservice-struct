@@ -1,0 +1,24 @@
+[package]
+name = "micro_address"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.8.4"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dotenv = "0.15"
+# Уберите эту строку:
+# tower = "0.4.0"
+
+# Auth / crypto / redis
+argon2 = "0.5"
+rand_core = { version = "0.6.3", features = ["std"] }
+jsonwebtoken = "9.3.1"
+redis = { version = "0.32.5", features = ["tokio-comp", "connection-manager", "aio"] }
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# utilities
+thiserror = "2.0.16"
