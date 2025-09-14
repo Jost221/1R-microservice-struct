@@ -3,14 +3,21 @@ use axum::{
     response::{IntoResponse, Response},
     http::StatusCode,
 };
+use redis::Client;
 use serde::Serialize;
-use sqlx::{postgres, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 
 // Определяем структуру для ответа об ошибке
 #[derive(Serialize)]
 pub struct ErrorResponse {
     pub error: String,
     pub details: Option<String>,
+}
+
+#[derive(Clone)]
+pub struct AppState {
+    pub sql_pool: Pool<Postgres>,
+    pub redis_pool: Client
 }
 
 // Определяем собственный тип ошибки
@@ -42,10 +49,13 @@ impl IntoResponse for AppError {
         (status, Json(error_response)).into_response()
     }
 }
-#[derive(Clone)]
-pub struct AppState {
-    pub sql_pool: Pool<Postgres>
-}
+
+#[derive(Serialize)]
 pub struct Message{
     pub message: String
+}
+
+#[derive(Serialize)]
+pub struct Data<T>{
+    pub data: T
 }

@@ -5,7 +5,8 @@ edition = "2024"
 
 [dependencies]
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres"] }
+redis = "0.32.5"
 tokio = { version = "1.47.1", features = ["full"] }
 dotenvy = "0.15"
 axum = "0.8.4"
-serde = { version = "1.0", features = ["derive", "json"] }
+serde = { version = "1.0.221", features = ["derive"] }

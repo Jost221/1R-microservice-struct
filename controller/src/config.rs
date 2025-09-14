@@ -17,7 +17,7 @@ impl Config {
         dotenv().ok();
         let port = env::var("PORT")?.parse().unwrap();
         let addres = env::var("ADDRESS")?.parse().unwrap();
-        let sql_url = env::var("SQL_URL")?.parse().unwrap();
+        let sql_url = env::var("DATABASE_URL")?.parse().unwrap();
         let redis_url = env::var("Redis_URL")?.parse().unwrap();
         Ok(
             Self { 

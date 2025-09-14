@@ -1,7 +1,8 @@
-use axum::{extract::State, routing::*, Router};
+use axum::{routing::*, Router};
 use tokio::net::TcpListener;
 use sqlx::PgPool;
 use std::sync::Arc;
+use redis;
 
 mod handlers;
 mod config;
@@ -16,9 +17,16 @@ async fn main() {
 
     let config = config::Config::from_env().expect("Failed to load config");
 
+    //init db
     let pool = PgPool::connect(config.sql_url.as_str()).await.unwrap();
+    
+    //init redis
+    let redis_client = redis::Client::open(config.redis_url.as_str()).unwrap();
+
+
     let appstate = Arc::new(AppState{
-        sql_pool:pool
+        sql_pool:pool,
+        redis_pool: redis_client
     });
 
     let app = Router::new()
@@ -33,19 +41,4 @@ async fn main() {
 
     println!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
-    // //подтягиваем .env файл
-    // dotenv().expect("Failed to load .env file");
-    // // Подключение к БД (пример для PostgreSQL)
-    // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    // println!("start connect");
-    // let pool = PgPool::connect(database_url.as_str()).await?;
-    // println!("send request");
-    // // Запрос на получение всех пользователей
-    // let users  = sqlx::query_file_as!(Users, "src/requests/get_user.sql")
-    //     .fetch_all(&pool)
-    //     .await?;
-
-    // dbg!(users);
-
-    // Ok(())
 }
