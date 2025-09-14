@@ -4,6 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use serde::Serialize;
+use sqlx::{postgres, Pool, Postgres};
 
 // Определяем структуру для ответа об ошибке
 #[derive(Serialize)]
@@ -40,4 +41,11 @@ impl IntoResponse for AppError {
         };
         (status, Json(error_response)).into_response()
     }
+}
+#[derive(Clone)]
+pub struct AppState {
+    pub sql_pool: Pool<Postgres>
+}
+pub struct Message{
+    pub message: String
 }
