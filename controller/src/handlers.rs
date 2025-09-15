@@ -1,4 +1,4 @@
-use axum::{Json, extract::State};
+use axum::{Json, extract::{State, Path}};
 use std::sync::Arc;
 
 use crate::api_static::*;
@@ -20,10 +20,10 @@ pub async fn get_users(State(app_state): State<Arc<AppState>>) -> Json<Data<Vec<
 
 }
 
-pub async fn get_user_by_id(State(app_state): State<Arc<AppState>>, Path(id): Path<u64>) -> Json<User> {
+pub async fn get_user_by_id(State(app_state): State<Arc<AppState>>, Path(id): Path<u64>) -> Result<Json<User>, AppError> {
     match processing::get_user::get_user_by_id(&app_state.sql_pool, &app_state.redis_pool, id).await {
-       Ok(v) => Json(v),
-       Err(e) => AppError::ErrorReadFile
+       Ok(v) => Ok(Json(v)),
+       Err(e) => Err(AppError::ErrorWrokWithDB)
     } 
 }
     

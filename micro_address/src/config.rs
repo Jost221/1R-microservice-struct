@@ -18,7 +18,7 @@ impl Config {
         Ok(Self { port, addres })
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn address_to_string(&self) -> String {
         format!("{}:{}", self.addres, self.port)
     }
 }

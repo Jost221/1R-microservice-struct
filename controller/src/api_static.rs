@@ -38,7 +38,7 @@ impl IntoResponse for AppError {
                     details: Some("Something went wrong".to_string()),
                 },
             ),
-            AppError::ErrorReadFile => (
+            AppError::ErrorWrokWithDB => (
                 StatusCode::BAD_REQUEST,
                 ErrorResponse {
                     error: "Bad request".to_string(),
@@ -55,6 +55,8 @@ pub struct Message{
     pub message: String
 }
 
+
+// universal struct for sen normal json list data
 #[derive(Serialize)]
 pub struct Data<T>{
     pub data: T
