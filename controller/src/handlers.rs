@@ -19,10 +19,11 @@ pub async fn get_users(State(app_state): State<Arc<AppState>>) -> Json<Data<Vec<
     })
 
 }
-// pub async fn get_user_by_id(Some(app_state): State<Arc<AppState>>) -> Json<User> {
-//     match user_data = processing::get_user::get_user_by_id(&app_state.sql_pool, &app_state.redis_pool).await {
-//        Ok(v) => Json(user_data),
-//        Err(e) => AppError::ErrorReadFile
-//     } 
-// }
+
+pub async fn get_user_by_id(State(app_state): State<Arc<AppState>>, Path(id): Path<u64>) -> Json<User> {
+    match processing::get_user::get_user_by_id(&app_state.sql_pool, &app_state.redis_pool, id).await {
+       Ok(v) => Json(v),
+       Err(e) => AppError::ErrorReadFile
+    } 
+}
     

@@ -32,6 +32,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root_handler))
         .route("/getUsers", get(get_users))
+        .route("/getUserBtId/:id", get(get_user_by_id))
         .with_state(appstate.clone());
 
 

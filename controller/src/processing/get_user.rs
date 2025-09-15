@@ -1,7 +1,9 @@
 use sqlx::{self, Pool, Postgres};
-use redis::{self, Client, Commands};
+use redis::{self, AsyncCommands, Client, Commands};
 
 use crate::sql_struct::*;
+
+static TIME_S:i32 = 6000; 
 
 pub async fn get_users(pool : &Pool<Postgres>) -> Result<Vec<User>, sqlx::Error>{
     let users = sqlx::query_file_as!(User, "src/requests/get_users.sql")
@@ -11,15 +13,27 @@ pub async fn get_users(pool : &Pool<Postgres>) -> Result<Vec<User>, sqlx::Error>
     Ok(users)
 }
 
-// pub async fn get_user_by_id(pool: &Pool<Postgres>, redis_client: Client, id: i32) -> Result<User, sqlx::Error>{
-//     let redis_conn = redis_client.get_connection().unwrap();
+pub async fn get_user_by_id(pool: &Pool<Postgres>, redis_client: Client, id: i32) -> Result<User, sqlx::Error>{
+    let mut redis_conn = redis_client.get_multiplexed_async_connection().await.unwrap() ;
 
-//     if let Ok(data) = redis_conn.get(format!("user_{}", id)) {
+    let serch_key = format!("user_{}", id);
+    let data: Result<User, redis::RedisError> = redis_conn.get(serch_key).await;
+    match data {
+        Ok(res) => {
+            let _ = redis_conn.expire(serch_key, TIME_S);
+            return Ok(res);
+        }
+        Err(_) =>{
 
-//     }
-
-//     Ok(User{
-//         id: 4,
-//         name: Some("biba".to_string())
-//     })
-// }
+            let user = sqlx::query_file_as!(User, "src/requests/get_user_by_id.sql")
+                            .fetch_one(pool)
+                            .await?;
+            
+            if let Err(e) = redis_client.set_ex(serch_key, user, TIME_S) {
+                dbg!(e);
+            }
+            
+            return Ok(user);
+        }        
+    }
+}

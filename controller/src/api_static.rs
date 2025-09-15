@@ -24,7 +24,7 @@ pub struct AppState {
 #[derive(Debug)]
 pub enum AppError {
     InternalError,
-    ErrorReadFile
+    ErrorWrokWithDB
 }
 
 // Реализуем IntoResponse для преобразования ошибки в HTTP-ответ
@@ -39,10 +39,10 @@ impl IntoResponse for AppError {
                 },
             ),
             AppError::ErrorReadFile => (
-                StatusCode::NOT_FOUND,
+                StatusCode::BAD_REQUEST,
                 ErrorResponse {
-                    error: "Resource not found".to_string(),
-                    details: Some("possible lack of work services".to_string()),
+                    error: "Bad request".to_string(),
+                    details: Some("can`t get info by send parametrs".to_string()),
                 },
             ),
         };
