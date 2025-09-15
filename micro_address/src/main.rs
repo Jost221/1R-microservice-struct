@@ -21,7 +21,7 @@ async fn main() {
         .route("/services", get(get_microservices))
         .route("/services", delete(remove_data));
     // Запуск сервера
-    let listener = TcpListener::bind(config.to_string())
+    let listener = TcpListener::bind(config.address_to_string())
         .await
         .unwrap();
     println!("listening on {}", listener.local_addr().unwrap());
