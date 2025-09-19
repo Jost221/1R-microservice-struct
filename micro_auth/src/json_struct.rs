@@ -1,27 +1,16 @@
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
-pub struct Message {
-    pub message: String,
-}
+pub struct Message { pub message: String }
 
 #[derive(Deserialize)]
-pub struct RegisterPayload {
-    pub username: String,
-    pub password: String,
-}
+pub struct RegisterPayload { pub username: String, pub password: String }
 
 #[derive(Deserialize)]
-pub struct LoginPayload {
-    pub username: String,
-    pub password: String,
-}
+pub struct LoginPayload { pub username: String, pub password: String }
 
 #[derive(Deserialize)]
-pub struct RefreshPayload {
-    pub refresh_token: String,
-}
+pub struct RefreshPayload { pub refresh_token: String }
 
 #[derive(Serialize)]
 pub struct TokenResponse {
@@ -29,3 +18,9 @@ pub struct TokenResponse {
     pub refresh_token: String,
     pub expires_in: i64,
 }
+
+#[derive(Serialize)]
+pub struct UserRolesResponse { pub data: Vec<String> }
+
+#[derive(Deserialize)]
+pub struct AssignRolePayload { pub username: String, pub roles: Vec<String> }

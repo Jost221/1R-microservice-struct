@@ -1,12 +1,9 @@
 use axum::{
     routing::{get, post},
-    Router,
-    middleware,
-    Json,
-    extract::State,
+    Router, middleware, Json,
 };
-use tokio::net::TcpListener;
 use std::sync::Arc;
+use tokio::net::TcpListener;
 use serde_json::json;
 
 mod handlers;
@@ -27,101 +24,61 @@ use sql_proxy::SqlControllerProxy;
 #[tokio::main]
 async fn main() {
     println!("🚀 Starting Auth Service...");
-    
-    // Загружаем конфигурацию
+
+    // Инициализация
     let cfg = Arc::new(Config::from_env().expect("Failed to load config"));
-    println!("✅ Configuration loaded");
-    
-    // Создаем Service Discovery Client
-    let service_discovery = Arc::new(ServiceDiscoveryClient::new(cfg.clone()));
-    println!("✅ Service Discovery Client created");
-    
-    // Создаем SQL Controller Proxy
-    let sql_proxy = Arc::new(SqlControllerProxy::new(service_discovery.clone()));
-    println!("✅ SQL Controller Proxy created");
-    
-    // Создаем состояние приложения
-    let app_state = Arc::new(AppState {
-        sql_proxy,
-        service_discovery: service_discovery.clone(),
+    let sd = Arc::new(ServiceDiscoveryClient::new(cfg.clone()));
+    let proxy = Arc::new(SqlControllerProxy::new(sd.clone()));
+    let state = Arc::new(AppState {
+        sql_proxy: proxy,
+        service_discovery: sd.clone(),
         jwt_secret: cfg.jwt_secret.clone(),
         jwt_exp_seconds: cfg.jwt_exp_seconds,
         refresh_exp_seconds: cfg.refresh_exp_seconds,
     });
-    
-    // Пытаемся найти SQL Controller при запуске
-    println!("🔍 Looking for SQL Controller...");
-    match service_discovery.get_sql_controller_url().await {
-        Ok(url) => println!("✅ SQL Controller found at: {}", url),
-        Err(e) => println!("⚠️ SQL Controller not found yet: {}", e),
-    }
-    
-    // Отправляем первый health check
-    println!("📡 Sending initial health status...");
-    if let Err(e) = service_discovery.send_health_status().await {
-        println!("⚠️ Initial health check failed: {}", e);
-    }
-    
-    // Запускаем фоновые задачи
-    let service_discovery_bg = service_discovery.clone();
+
+    // Фоновые задачи
+    let service_discovery_bg = sd.clone();
     tokio::spawn(async move {
-        println!("🔄 Starting periodic tasks...");
         service_discovery_bg.start_periodic_tasks().await;
     });
-    
-    // Настраиваем маршруты
+
+    // Маршруты
     let public = Router::new()
         .route("/", get(root_handler))
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/refresh", post(refresh_token))
-        .route("/health", get(health_handler))
-        .route("/status", get(status_handler))
-        .with_state(app_state.clone());
-    
+        .route("/health", get(|| async { Json(json!({"status":"healthy"})) }))
+        .with_state(state.clone());
+
     let protected = Router::new()
         .route("/services", get(get_microservices))
-        .layer(middleware::from_fn_with_state(app_state.clone(), auth::my_middleware));
-    
-    let app = Router::new()
-        .merge(public)
-        .merge(protected);
-    
-    // Запускаем сервер
+        .route("/user/roles", get(get_current_user_roles))
+        .route("/admin/assign-roles", post(assign_roles))
+        .layer(middleware::from_fn_with_state(state.clone(), auth::my_middleware))
+        .with_state(state.clone());
+
+    let app = public.merge(protected);
+
+    // Запуск сервера - используем нативный TCP listener
     let bind_addr = cfg.bind_addr();
-    let listener = TcpListener::bind(bind_addr.clone()).await.expect("Failed to bind");
-    
+    let listener = TcpListener::bind(&bind_addr).await
+        .expect("Failed to bind to address");
+
     println!("🎯 Auth Service listening on {}", bind_addr);
     println!("📋 Available endpoints:");
-    println!("   GET  /           - Welcome message");
-    println!("   POST /register   - User registration");
-    println!("   POST /login      - User authentication");
-    println!("   POST /refresh    - Token refresh");
-    println!("   GET  /health     - Health check");
-    println!("   GET  /status     - Service status");
-    println!("   GET  /services   - Protected endpoint");
-    
-    axum::serve(listener, app).await.unwrap();
-}
+    println!("   GET / - Welcome message");
+    println!("   POST /register - User registration");
+    println!("   POST /login - User authentication");
+    println!("   POST /refresh - Token refresh");
+    println!("   GET /health - Health check");
+    println!("   GET /services - Protected endpoint");
+    println!("   GET /user/roles - Get current user roles");
+    println!("   POST /admin/assign-roles - Assign user roles (admin only)");
 
-// Новые хендлеры для мониторинга
-async fn health_handler() -> Json<serde_json::Value> {
-    Json(json!({
-        "status": "healthy",
-        "service": "auth-service",
-        "timestamp": chrono::Utc::now().to_rfc3339(),
-        "version": "1.0.0"
-    }))
-}
-
-async fn status_handler(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
-    let status = state.service_discovery.get_status();
-    
-    Json(json!({
-        "service_name": status.service_name,
-        "sql_controller_cached": status.sql_controller_cached,
-        "last_health_check": status.last_health_check.map(|t| format!("{:?} ago", t.elapsed())),
-        "uptime": "running",
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    }))
+    // ЕДИНСТВЕННЫЙ рабочий способ для Axum 0.7
+    axum::serve(listener, app)
+        .await
+        .expect("Server failed to start");
 }

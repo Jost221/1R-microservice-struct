@@ -6,14 +6,13 @@ use axum::{
     body::Body,
 };
 use std::sync::Arc;
-
 use crate::tokens;
 use crate::processing::AppState;
 
 pub async fn my_middleware(
     State(state): State<Arc<AppState>>,
     req: Request<Body>,
-    next: Next,                            
+    next: Next,
 ) -> Result<Response, StatusCode> {
     let auth_header = req.headers()
         .get(header::AUTHORIZATION)

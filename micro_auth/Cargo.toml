@@ -4,31 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# Web framework
 axum = "0.7"
 tokio = { version = "1.0", features = ["full"] }
-
-# HTTP client
 reqwest = { version = "0.12", features = ["json"] }
-
-# Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-
-# JWT
 jsonwebtoken = "9"
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
-
-# Password hashing
 argon2 = "0.5"
 rand_core = { version = "0.6", features = ["std"] }
-
-# Error handling
 thiserror = "1.0"
-
-# Configuration
 dotenv = "0.15"
-
-# Redis (пока оставляем, может пригодиться для fallback)
-redis = { version = "0.24", features = ["aio", "tokio-comp"] }
